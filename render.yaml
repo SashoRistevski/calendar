@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: calendar-availability-proxy
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /healthz
+    envVars:
+      - key: ICLOUD_EMAIL
+        sync: false
+      - key: ICLOUD_APP_PASSWORD
+        sync: false
+      - key: CALENDAR_ID
+        sync: false
+      - key: CACHE_TTL_SECONDS
+        value: "120"
+      - key: RATE_PER_SECOND
+        value: "0.5"
+      - key: RATE_BURST
+        value: "8"
