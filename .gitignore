@@ -1,5 +1,6 @@
-.env
+env
 .env.*
 *.exe
 dist/
-server
+# Binary built at repo root (do not use plain "server" — it ignores cmd/server/)
+/server
