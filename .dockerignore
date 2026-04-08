@@ -2,5 +2,6 @@
 .env
 .env.*
 *.md
-server
+# Root binary only; plain "server" can exclude cmd/server/
+/server
 dist
