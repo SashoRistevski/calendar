@@ -17,6 +17,8 @@
         color-scheme: dark;
         --today-tint: rgb(59 130 246 / 0.1);
         --slot-h: 48px;
+        /* Space between calendar left edge and hour labels */
+        --fc-time-axis-pad-left: 0.75rem;
       }
       body {
         font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
@@ -73,7 +75,12 @@
         font-size: 0.72rem;
         color: rgb(148 163 184);
         vertical-align: top;
-        padding: 0;
+        padding: 0 0 0 var(--fc-time-axis-pad-left);
+      }
+      /* Align header / all-day gutter with slot label column */
+      .fc .fc-timegrid-axis.fc-scrollgrid-shrink {
+        padding-left: var(--fc-time-axis-pad-left);
+        box-sizing: border-box;
       }
       .fc .fc-timegrid-slot-label-frame {
         height: var(--slot-h);
@@ -81,7 +88,7 @@
         align-items: flex-start;
         justify-content: flex-end;
         padding-top: 2px;
-        padding-right: 6px;
+        padding-right: 8px;
         box-sizing: border-box;
       }
       .fc .fc-timegrid-axis-cushion {
