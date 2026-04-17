@@ -2,6 +2,12 @@
 .env
 .env.*
 *.md
-# Root binary only; plain "server" can exclude cmd/server/
 /server
 dist
+.idea
+.vscode
+*.log
+*.pem
+*.key
+tmp
+coverage.out

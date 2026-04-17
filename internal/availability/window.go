@@ -2,7 +2,6 @@ package availability
 
 import "time"
 
-// horizonDays is the length of the forward window from the Monday 00:00 week start (not from "now").
 const horizonDays = 31
 
 func QueryWindow(loc *time.Location, now time.Time) (start, end time.Time) {

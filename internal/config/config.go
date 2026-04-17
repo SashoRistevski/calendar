@@ -10,8 +10,7 @@ import (
 
 const (
 	DefaultCalDAVBase = "https://caldav.icloud.com"
-	// Shorter default so phone edits show up without always using ?fresh=1; override with CACHE_TTL_SECONDS.
-	DefaultCacheTTL = 90 * time.Second
+	DefaultCacheTTL   = 90 * time.Second
 )
 
 type Config struct {
@@ -24,12 +23,8 @@ type Config struct {
 	RatePerSecond     float64
 	RateBurst         int
 	CalDAVDiagnostics bool
-	// EventParseLoc is the location used for floating ICS date-times (no TZID / no Z).
-	// Default UTC matches github.com/SashoRistevski/rehearsal-calculator (to_utc → pytz.UTC.localize).
-	// Set EVENT_PARSE_TIMEZONE=Europe/Skopje if your feed uses local floating times.
-	EventParseLoc *time.Location
-	// SkipTransparent drops VEVENT with TRANSP:TRANSPARENT when true (default false — rehearsal script did not filter these).
-	SkipTransparent bool
+	EventParseLoc     *time.Location
+	SkipTransparent   bool
 }
 
 func Load() (Config, error) {

@@ -6,10 +6,14 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
 	_ "time/tzdata"
+
+	"github.com/emersion/go-webdav/caldav"
 
 	"github.com/sasho/calendar-availability-proxy/internal/availability"
 	"github.com/sasho/calendar-availability-proxy/internal/config"
@@ -42,13 +46,14 @@ func main() {
 	path := availability.NormalizeCalendarPath(rawPath)
 
 	src := availability.NewCachedSource(client, path, cfg.CacheTTL, cfg.EventParseLoc, cfg.SkipTransparent)
+	studio := loadStudioDeps(client, path)
 	srv := httpapi.New(src, loc, cfg.RatePerSecond, cfg.RateBurst, httpapi.CalDAVDiagnostics{
 		Enabled:         cfg.CalDAVDiagnostics,
 		Client:          client,
 		Path:            path,
 		EventParseLoc:   cfg.EventParseLoc,
 		SkipTransparent: cfg.SkipTransparent,
-	})
+	}, studio)
 	if cfg.CalDAVDiagnostics {
 		log.Printf("CALDAV_DIAGNOSTICS=1: open GET /api/diagnostics/caldav for a step-by-step CalDAV probe")
 	}
@@ -76,4 +81,26 @@ func main() {
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer shutdownCancel()
 	_ = httpSrv.Shutdown(shutdownCtx)
+}
+
+func loadStudioDeps(client *caldav.Client, calendarPath string) *httpapi.StudioDeps {
+	port := 587
+	if v := strings.TrimSpace(os.Getenv("SMTP_PORT")); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			port = n
+		}
+	}
+	return &httpapi.StudioDeps{
+		JWTSecret:           strings.TrimSpace(os.Getenv("SUPABASE_JWT_SECRET")),
+		SupabaseURL:         strings.TrimSpace(os.Getenv("SUPABASE_URL")),
+		SupabaseServiceRole: strings.TrimSpace(os.Getenv("SUPABASE_SERVICE_ROLE_KEY")),
+		SupabaseAnonKey:     strings.TrimSpace(os.Getenv("SUPABASE_ANON_KEY")),
+		SMTPHost:            strings.TrimSpace(os.Getenv("SMTP_HOST")),
+		SMTPPort:            port,
+		SMTPUser:            strings.TrimSpace(os.Getenv("SMTP_USER")),
+		SMTPPass:            strings.TrimSpace(os.Getenv("SMTP_PASS")),
+		SMTPFrom:            strings.TrimSpace(os.Getenv("SMTP_FROM")),
+		CalDAV:              client,
+		CalendarPath:        calendarPath,
+	}
 }

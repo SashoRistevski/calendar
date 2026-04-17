@@ -10,18 +10,17 @@ import (
 )
 
 type CachedSource struct {
-	client           *caldav.Client
-	calendarPath     string
-	ttl              time.Duration
-	eventParseLoc    *time.Location
-	skipTransparent  bool
-	mu               sync.RWMutex
-	fetchedAt        time.Time
-	slots            []Slot
-	fetchErr         error
+	client          *caldav.Client
+	calendarPath    string
+	ttl             time.Duration
+	eventParseLoc   *time.Location
+	skipTransparent bool
+	mu              sync.RWMutex
+	fetchedAt       time.Time
+	blocks          []BusyBlock
+	fetchErr        error
 }
 
-// eventParseLoc is used for floating ICS times (no TZID / no Z). Default UTC matches SashoRistevski/rehearsal-calculator.
 func NewCachedSource(client *caldav.Client, calendarPath string, ttl time.Duration, eventParseLoc *time.Location, skipTransparent bool) *CachedSource {
 	return &CachedSource{
 		client:          client,
@@ -34,22 +33,33 @@ func NewCachedSource(client *caldav.Client, calendarPath string, ttl time.Durati
 
 const errCooldown = 30 * time.Second
 
-// Invalidate drops the in-memory copy so the next Slots call refetches from CalDAV.
 func (s *CachedSource) Invalidate() {
 	s.mu.Lock()
 	s.fetchedAt = time.Time{}
-	s.slots = nil
+	s.blocks = nil
 	s.fetchErr = nil
 	s.mu.Unlock()
 }
 
 func (s *CachedSource) Slots(ctx context.Context, queryStart, queryEnd time.Time) ([]Slot, error) {
+	blocks, err := s.busyBlocks(ctx, queryStart, queryEnd)
+	if err != nil {
+		return nil, err
+	}
+	return blocksToSlots(clipBusyBlocks(blocks, queryStart, queryEnd)), nil
+}
+
+func (s *CachedSource) BusyBlocks(ctx context.Context, queryStart, queryEnd time.Time) ([]BusyBlock, error) {
+	return s.busyBlocks(ctx, queryStart, queryEnd)
+}
+
+func (s *CachedSource) busyBlocks(ctx context.Context, queryStart, queryEnd time.Time) ([]BusyBlock, error) {
 	s.mu.RLock()
 	age := time.Since(s.fetchedAt)
 	if !s.fetchedAt.IsZero() && age < s.ttl && s.fetchErr == nil {
-		cached := s.slots
+		cached := s.blocks
 		s.mu.RUnlock()
-		return clipSlots(cached, queryStart, queryEnd), nil
+		return clipBusyBlocks(cached, queryStart, queryEnd), nil
 	}
 	if s.fetchErr != nil && age < errCooldown {
 		err := s.fetchErr
@@ -58,29 +68,29 @@ func (s *CachedSource) Slots(ctx context.Context, queryStart, queryEnd time.Time
 	}
 	s.mu.RUnlock()
 
-	slots, err := FetchSlots(ctx, s.client, s.calendarPath, queryStart, queryEnd, s.eventParseLoc, s.skipTransparent)
+	blocks, err := FetchBusyBlocks(ctx, s.client, s.calendarPath, queryStart, queryEnd, s.eventParseLoc, s.skipTransparent)
 
 	s.mu.Lock()
 	s.fetchedAt = time.Now()
 	s.fetchErr = err
 	if err == nil {
-		s.slots = slots
+		s.blocks = blocks
 	}
 	s.mu.Unlock()
 
 	if err != nil {
 		return nil, err
 	}
-	return clipSlots(slots, queryStart, queryEnd), nil
+	return clipBusyBlocks(blocks, queryStart, queryEnd), nil
 }
 
-func clipSlots(in []Slot, qs, qe time.Time) []Slot {
-	out := make([]Slot, 0, len(in))
-	for _, sl := range in {
-		if !intervalOverlaps(sl.Start, sl.End, qs, qe) {
+func clipBusyBlocks(in []BusyBlock, qs, qe time.Time) []BusyBlock {
+	out := make([]BusyBlock, 0, len(in))
+	for _, b := range in {
+		if !intervalOverlaps(b.Start, b.End, qs, qe) {
 			continue
 		}
-		out = append(out, sl)
+		out = append(out, b)
 	}
 	return out
 }

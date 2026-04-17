@@ -11,6 +11,7 @@
       rel="stylesheet"
     />
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
     <style>
       :root {
@@ -115,6 +116,18 @@
       }
       .fc .fc-timegrid-event.booked-bg .fc-event-title {
         display: none;
+      }
+      .fc.admin-ui .fc-timegrid-event.booked-bg .fc-event-title,
+      .fc.admin-ui .fc-v-event.booked-bg .fc-event-title {
+        display: block !important;
+        font-size: 0.65rem;
+        line-height: 1.2;
+        font-weight: 600;
+        color: rgb(254 205 211);
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
       .fc .fc-list-event.booked-bg .fc-list-event-dot {
         border-color: rgb(244 63 94);
@@ -250,7 +263,25 @@
           <span class="mx-1.5 font-light text-slate-600">/</span>
           <span class="text-white">Studio Porta Vlae availability</span>
         </h1>
-        <p class="text-sm text-slate-400">Europe/Skopje · read-only calendar</p>
+        <div class="flex flex-wrap items-center gap-2">
+          <p class="text-sm text-slate-400">Europe/Skopje · members can book rehearsal blocks</p>
+          <span class="hidden sm:inline text-slate-600">·</span>
+          <button
+            type="button"
+            id="btn-open-auth"
+            class="rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700"
+          >
+            Sign in
+          </button>
+          <span id="auth-status" class="hidden text-xs text-slate-400"></span>
+          <button
+            type="button"
+            id="btn-sign-out"
+            class="hidden rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-400 hover:text-white"
+          >
+            Sign out
+          </button>
+        </div>
         <p class="text-sm text-slate-400">
           <a
             href="https://maps.app.goo.gl/GzeYpqXQJ4kS9Qio9"
@@ -331,6 +362,13 @@
                   >
                     Duration
                   </th>
+                  <th
+                    id="col-detail"
+                    scope="col"
+                    class="hidden px-4 py-3.5 text-xs font-semibold uppercase tracking-wide text-slate-400"
+                  >
+                    Detail
+                  </th>
                 </tr>
               </thead>
               <tbody id="slot-rows" class="divide-y divide-slate-800/80"></tbody>
@@ -345,6 +383,139 @@
         </div>
       </section>
     </div>
+
+    <div
+      id="auth-modal"
+      class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="auth-modal-title"
+    >
+      <div class="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl">
+        <h2 id="auth-modal-title" class="mb-4 text-lg font-semibold text-white">Studio account</h2>
+        <p class="mb-4 text-xs text-slate-500">Uses Supabase. Set SUPABASE_URL and keys on the server.</p>
+        <label class="mb-2 block text-xs font-medium text-slate-400">Email</label>
+        <input
+          id="auth-email"
+          type="email"
+          autocomplete="email"
+          class="mb-3 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none ring-sky-500/40 focus:ring-2"
+        />
+        <label class="mb-2 block text-xs font-medium text-slate-400">Password</label>
+        <input
+          id="auth-password"
+          type="password"
+          autocomplete="current-password"
+          class="mb-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none ring-sky-500/40 focus:ring-2"
+        />
+        <p id="auth-error" class="mb-3 hidden text-xs text-red-400"></p>
+        <div class="flex flex-wrap gap-2">
+          <button
+            type="button"
+            id="auth-login"
+            class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-500"
+          >
+            Log in
+          </button>
+          <button
+            type="button"
+            id="auth-signup"
+            class="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+          >
+            Sign up
+          </button>
+          <button type="button" id="auth-close" class="ml-auto text-sm text-slate-500 hover:text-white">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="profile-modal"
+      class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="profile-modal-title"
+    >
+      <div class="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl">
+        <h2 id="profile-modal-title" class="mb-2 text-lg font-semibold text-white">Complete your Studio Profile</h2>
+        <p class="mb-4 text-xs leading-relaxed text-slate-400">
+          Add your full name and phone number so rehearsal bookings appear on the studio calendar as
+          <span class="font-time text-slate-300">REHEARSAL: Name (Phone)</span>. You need this on file before you can confirm a booking.
+        </p>
+        <label class="mb-2 block text-xs font-medium text-slate-400">Full name</label>
+        <input
+          id="profile-full-name"
+          type="text"
+          autocomplete="name"
+          class="mb-3 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none ring-sky-500/40 focus:ring-2"
+        />
+        <label class="mb-2 block text-xs font-medium text-slate-400">Phone number</label>
+        <input
+          id="profile-phone"
+          type="tel"
+          autocomplete="tel"
+          class="mb-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none ring-sky-500/40 focus:ring-2"
+        />
+        <p id="profile-error" class="mb-3 hidden text-xs text-red-400"></p>
+        <div class="flex flex-wrap gap-2">
+          <button
+            type="button"
+            id="profile-save"
+            class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-500"
+          >
+            Save profile
+          </button>
+          <button type="button" id="profile-close" class="ml-auto text-sm text-slate-500 hover:text-white">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="book-sheet"
+      class="fixed inset-x-0 bottom-0 z-[90] hidden translate-y-full border-t border-slate-700 bg-slate-900/98 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-12px_40px_rgba(0,0,0,0.45)] transition-transform duration-200 sm:inset-x-auto sm:right-4 sm:bottom-4 sm:max-w-md sm:rounded-2xl sm:border sm:p-5"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="mb-3 flex items-start justify-between gap-2">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Book rehearsal</p>
+          <p id="sheet-when" class="font-time text-sm text-slate-200"></p>
+        </div>
+        <button type="button" id="sheet-close" class="rounded p-1 text-slate-500 hover:bg-slate-800 hover:text-white" aria-label="Close">
+          ✕
+        </button>
+      </div>
+      <p class="mb-3 text-xs text-slate-500">Pick a duration. We re-check the calendar when you confirm.</p>
+      <div class="mb-4 flex flex-wrap gap-2">
+        <button type="button" data-hours="2" class="sheet-dur rounded-xl border border-slate-600 px-4 py-3 text-sm font-medium text-slate-100 hover:border-sky-500/60 hover:bg-slate-800">
+          2 h
+        </button>
+        <button type="button" data-hours="3" class="sheet-dur rounded-xl border border-slate-600 px-4 py-3 text-sm font-medium text-slate-100 hover:border-sky-500/60 hover:bg-slate-800">
+          3 h
+        </button>
+        <button type="button" data-hours="4" class="sheet-dur rounded-xl border border-slate-600 px-4 py-3 text-sm font-medium text-slate-100 hover:border-sky-500/60 hover:bg-slate-800">
+          4 h
+        </button>
+      </div>
+      <p id="sheet-msg" class="mb-3 hidden text-xs text-amber-300"></p>
+      <button
+        type="button"
+        id="sheet-profile-cta"
+        class="mb-3 hidden w-full rounded-xl border border-sky-600/60 bg-sky-950/40 py-3 text-sm font-semibold text-sky-200 hover:bg-sky-900/50"
+      >
+        Complete studio profile
+      </button>
+      <button
+        type="button"
+        id="sheet-confirm"
+        disabled
+        class="w-full rounded-xl bg-rose-600 py-3 text-sm font-semibold text-white hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        Confirm booking
+      </button>
+    </div>
+    <div id="book-sheet-scrim" class="fixed inset-0 z-[80] hidden bg-black/40" aria-hidden="true"></div>
+
     <script>
       (function () {
         var TZ = "Europe/Skopje";
@@ -379,8 +550,31 @@
         var errEl = document.getElementById("slot-error");
         var tableParent = tbody.closest("table");
         var lastUpdatedEl = document.getElementById("last-updated");
+        var colDetail = document.getElementById("col-detail");
         var POLL_MS = 120000;
         var calendar;
+        var sb = null;
+        var gSession = null;
+        var gMe = { is_admin: false, email: "", full_name: "", phone_number: "", profile_complete: false };
+        var gSheetStartISO = null;
+        var gSheetHours = 0;
+
+        function sheetStartFromDateClick(info) {
+          if (info.dateStr) {
+            return info.dateStr;
+          }
+          if (calendar && typeof calendar.formatIso === "function") {
+            return calendar.formatIso(info.date);
+          }
+          return null;
+        }
+
+        function authHeaders() {
+          if (gSession && gSession.access_token) {
+            return { Authorization: "Bearer " + gSession.access_token };
+          }
+          return {};
+        }
 
         function pickTimeGridView() {
           var w = window.innerWidth;
@@ -396,6 +590,11 @@
         function renderTable(rows) {
           tbody.innerHTML = "";
           errEl.classList.add("hidden");
+          if (gMe.is_admin) {
+            colDetail.classList.remove("hidden");
+          } else {
+            colDetail.classList.add("hidden");
+          }
           if (!rows.length) {
             emptyEl.classList.remove("hidden");
             tableParent.classList.add("hidden");
@@ -413,6 +612,17 @@
               (i % 2 === 0 ? "bg-slate-900/15" : "bg-slate-900/30");
             var ds = new Date(e.start);
             var de = new Date(e.end);
+            var detail = "";
+            if (gMe.is_admin && (e.band_name || e.phone || e.email)) {
+              detail =
+                '<td class="max-w-[200px] px-4 py-3 text-xs text-slate-300">' +
+                (e.band_name || "—") +
+                (e.phone ? "<br/><span class='font-time text-slate-400'>" + e.phone + "</span>" : "") +
+                (e.email ? "<br/><span class='text-slate-500'>" + e.email + "</span>" : "") +
+                "</td>";
+            } else if (gMe.is_admin) {
+              detail = '<td class="px-4 py-3 text-xs text-slate-500">—</td>';
+            }
             tr.innerHTML =
               '<td class="whitespace-nowrap px-4 py-3 font-medium text-slate-200">' +
               dateFmt.format(ds) +
@@ -425,7 +635,8 @@
               "</td>" +
               '<td class="font-time whitespace-nowrap px-4 py-3 text-sm text-slate-400">' +
               formatDuration(e.start, e.end) +
-              "</td>";
+              "</td>" +
+              detail;
             tbody.appendChild(tr);
           });
         }
@@ -444,12 +655,24 @@
         }
 
         function applyEvents(rows) {
+          var elCal = document.getElementById("calendar");
+          if (gMe.is_admin) {
+            elCal.classList.add("admin-ui");
+          } else {
+            elCal.classList.remove("admin-ui");
+          }
           calendar.removeAllEvents();
           rows.forEach(function (e) {
+            var title = "Booked";
+            if (gMe.is_admin && e.band_name) {
+              title = e.band_name;
+            } else if (e.title) {
+              title = e.title;
+            }
             calendar.addEvent({
               start: e.start,
               end: e.end,
-              title: "Booked",
+              title: title,
               classNames: ["booked-bg"],
             });
           });
@@ -466,7 +689,8 @@
         function load(forceFresh) {
           errEl.classList.add("hidden");
           var url = "/api/availability" + (forceFresh ? "?fresh=1" : "");
-          var init = forceFresh ? { cache: "no-store" } : {};
+          var init = { headers: Object.assign({}, authHeaders()) };
+          if (forceFresh) init.cache = "no-store";
           return fetch(url, init)
             .then(function (r) {
               if (!r.ok) throw new Error("bad status");
@@ -557,10 +781,338 @@
           weekends: true,
           events: [],
           eventInteractive: false,
+          dateClick: function (info) {
+            if (info.allDay) return;
+            if (!gSession || !gSession.access_token || gMe.is_admin) return;
+            gSheetStartISO = sheetStartFromDateClick(info);
+            if (!gSheetStartISO) {
+              return;
+            }
+            gSheetHours = 0;
+            openBookSheet();
+          },
         });
         calendar.render();
 
-        load(false);
+        function setAuthUi() {
+          var st = document.getElementById("auth-status");
+          var bo = document.getElementById("btn-open-auth");
+          var so = document.getElementById("btn-sign-out");
+          if (gSession && gSession.access_token) {
+            bo.classList.add("hidden");
+            st.classList.remove("hidden");
+            so.classList.remove("hidden");
+            st.textContent = gMe.email || "Signed in";
+          } else {
+            bo.classList.remove("hidden");
+            st.classList.add("hidden");
+            so.classList.add("hidden");
+          }
+        }
+
+        function refreshMe() {
+          if (!gSession || !gSession.access_token) {
+            gMe = { is_admin: false, email: "", full_name: "", phone_number: "", profile_complete: false };
+            return Promise.resolve();
+          }
+          return fetch("/api/me", { headers: authHeaders() })
+            .then(function (r) {
+              if (!r.ok) throw new Error("me");
+              return r.json();
+            })
+            .then(function (j) {
+              gMe.is_admin = !!j.is_admin;
+              gMe.email = j.email || "";
+              gMe.full_name = j.full_name || "";
+              gMe.phone_number = j.phone_number || "";
+              gMe.profile_complete = !!j.profile_complete;
+              setAuthUi();
+              var sheet = document.getElementById("book-sheet");
+              if (sheet && !sheet.classList.contains("hidden")) {
+                updateSheetBookingUI();
+              }
+            })
+            .catch(function () {
+              gMe = { is_admin: false, email: "", full_name: "", phone_number: "", profile_complete: false };
+              setAuthUi();
+            });
+        }
+
+        function openProfileModal() {
+          var m = document.getElementById("profile-modal");
+          var err = document.getElementById("profile-error");
+          err.classList.add("hidden");
+          document.getElementById("profile-full-name").value = gMe.full_name || "";
+          document.getElementById("profile-phone").value = gMe.phone_number || "";
+          m.classList.remove("hidden");
+          m.classList.add("flex");
+        }
+
+        function closeProfileModal() {
+          var m = document.getElementById("profile-modal");
+          m.classList.add("hidden");
+          m.classList.remove("flex");
+        }
+
+        function updateSheetBookingUI() {
+          var conf = document.getElementById("sheet-confirm");
+          var msg = document.getElementById("sheet-msg");
+          var cta = document.getElementById("sheet-profile-cta");
+          msg.classList.add("hidden");
+          cta.classList.add("hidden");
+          var member = gSession && gSession.access_token && !gMe.is_admin;
+          var complete = !!(gMe.is_admin || gMe.profile_complete);
+          conf.disabled = !gSheetHours || !complete;
+          if (!member) return;
+          if (!gMe.profile_complete && !gMe.is_admin) {
+            cta.classList.remove("hidden");
+            if (gSheetHours) {
+              msg.textContent =
+                "Complete your studio profile (full name and phone number) to confirm this booking.";
+              msg.classList.remove("hidden");
+            }
+          }
+        }
+
+        function openBookSheet() {
+          if (!gSheetStartISO) return;
+          var sheet = document.getElementById("book-sheet");
+          var scrim = document.getElementById("book-sheet-scrim");
+          var when = document.getElementById("sheet-when");
+          var msg = document.getElementById("sheet-msg");
+          var conf = document.getElementById("sheet-confirm");
+          msg.classList.add("hidden");
+          conf.disabled = true;
+          gSheetHours = 0;
+          document.querySelectorAll(".sheet-dur").forEach(function (b) {
+            b.classList.remove("border-sky-500", "bg-slate-800");
+          });
+          var startAsDate = new Date(gSheetStartISO);
+          when.textContent =
+            dateFmt.format(startAsDate) +
+            " " +
+            timeFmt.format(startAsDate) +
+            " (" +
+            TZ +
+            ") · pick duration";
+          scrim.classList.remove("hidden");
+          sheet.classList.remove("hidden");
+          requestAnimationFrame(function () {
+            sheet.classList.remove("translate-y-full");
+            updateSheetBookingUI();
+          });
+        }
+
+        function closeBookSheet() {
+          var sheet = document.getElementById("book-sheet");
+          var scrim = document.getElementById("book-sheet-scrim");
+          sheet.classList.add("translate-y-full");
+          setTimeout(function () {
+            sheet.classList.add("hidden");
+            scrim.classList.add("hidden");
+          }, 200);
+          gSheetStartISO = null;
+          gSheetHours = 0;
+        }
+
+        setAuthUi();
+        fetch("/api/public-config")
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (cfg) {
+            if (typeof supabase !== "undefined" && cfg.supabase_url && cfg.supabase_anon_key) {
+              sb = supabase.createClient(cfg.supabase_url, cfg.supabase_anon_key);
+              return sb.auth.getSession();
+            }
+            return { data: { session: null } };
+          })
+          .then(function (res) {
+            var sess = res && res.data && res.data.session;
+            gSession = sess || null;
+            if (sb) {
+              sb.auth.onAuthStateChange(function (_evt, session) {
+                gSession = session;
+                refreshMe().then(function () {
+                  load(true);
+                });
+              });
+            }
+            return refreshMe();
+          })
+          .then(function () {
+            return load(false);
+          })
+          .catch(function () {
+            return load(false);
+          });
+
+        document.getElementById("btn-open-auth").addEventListener("click", function () {
+          document.getElementById("auth-modal").classList.remove("hidden");
+          document.getElementById("auth-modal").classList.add("flex");
+          document.getElementById("auth-error").classList.add("hidden");
+        });
+        function closeAuth() {
+          var m = document.getElementById("auth-modal");
+          m.classList.add("hidden");
+          m.classList.remove("flex");
+        }
+        document.getElementById("auth-close").addEventListener("click", closeAuth);
+        document.getElementById("btn-sign-out").addEventListener("click", function () {
+          if (sb) sb.auth.signOut();
+          gSession = null;
+          gMe = { is_admin: false, email: "", full_name: "", phone_number: "", profile_complete: false };
+          setAuthUi();
+          load(true);
+        });
+        document.getElementById("auth-login").addEventListener("click", function () {
+          var em = document.getElementById("auth-email").value.trim();
+          var pw = document.getElementById("auth-password").value;
+          var err = document.getElementById("auth-error");
+          if (!sb) {
+            err.textContent = "Supabase not configured.";
+            err.classList.remove("hidden");
+            return;
+          }
+          err.classList.add("hidden");
+          sb.auth
+            .signInWithPassword({ email: em, password: pw })
+            .then(function (r) {
+              if (r.error) throw r.error;
+              gSession = r.data.session;
+              closeAuth();
+              return refreshMe();
+            })
+            .then(function () {
+              return load(true);
+            })
+            .catch(function (e) {
+              err.textContent = (e && e.message) || "Login failed";
+              err.classList.remove("hidden");
+            });
+        });
+        document.getElementById("auth-signup").addEventListener("click", function () {
+          var em = document.getElementById("auth-email").value.trim();
+          var pw = document.getElementById("auth-password").value;
+          var err = document.getElementById("auth-error");
+          if (!sb) {
+            err.textContent = "Supabase not configured.";
+            err.classList.remove("hidden");
+            return;
+          }
+          err.classList.add("hidden");
+          sb.auth
+            .signUp({ email: em, password: pw })
+            .then(function (r) {
+              if (r.error) throw r.error;
+              err.textContent = "Check your email to confirm, then log in.";
+              err.classList.remove("hidden");
+              err.classList.remove("text-red-400");
+              err.classList.add("text-sky-400");
+            })
+            .catch(function (e) {
+              err.classList.add("text-red-400");
+              err.classList.remove("text-sky-400");
+              err.textContent = (e && e.message) || "Sign up failed";
+              err.classList.remove("hidden");
+            });
+        });
+
+        document.querySelectorAll(".sheet-dur").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            gSheetHours = parseInt(btn.getAttribute("data-hours"), 10) || 0;
+            document.querySelectorAll(".sheet-dur").forEach(function (b) {
+              b.classList.remove("border-sky-500", "bg-slate-800");
+            });
+            btn.classList.add("border-sky-500", "bg-slate-800");
+            updateSheetBookingUI();
+          });
+        });
+        document.getElementById("sheet-close").addEventListener("click", closeBookSheet);
+        document.getElementById("book-sheet-scrim").addEventListener("click", closeBookSheet);
+        document.getElementById("sheet-profile-cta").addEventListener("click", function () {
+          openProfileModal();
+        });
+        document.getElementById("profile-close").addEventListener("click", closeProfileModal);
+        document.getElementById("profile-save").addEventListener("click", function () {
+          var err = document.getElementById("profile-error");
+          var fn = document.getElementById("profile-full-name").value.trim();
+          var ph = document.getElementById("profile-phone").value.trim();
+          err.classList.add("hidden");
+          if (!fn || !ph) {
+            err.textContent = "Enter both full name and phone number.";
+            err.classList.remove("hidden");
+            return;
+          }
+          if (!gSession || !gSession.access_token) {
+            err.textContent = "Sign in first.";
+            err.classList.remove("hidden");
+            return;
+          }
+          fetch("/api/profile", {
+            method: "PUT",
+            headers: Object.assign({ "Content-Type": "application/json" }, authHeaders()),
+            body: JSON.stringify({ full_name: fn, phone_number: ph }),
+          })
+            .then(function (r) {
+              if (!r.ok) {
+                return r.text().then(function (t) {
+                  throw new Error((t || "").trim() || "Save failed (" + r.status + ").");
+                });
+              }
+              return refreshMe();
+            })
+            .then(function () {
+              closeProfileModal();
+              updateSheetBookingUI();
+            })
+            .catch(function (e) {
+              err.textContent = (e && e.message) || "Could not save profile.";
+              err.classList.remove("hidden");
+            });
+        });
+        document.getElementById("sheet-confirm").addEventListener("click", function () {
+          if (!gSession || !gSession.access_token || !gSheetStartISO || !gSheetHours) return;
+          if (!gMe.profile_complete && !gMe.is_admin) return;
+          var msg = document.getElementById("sheet-msg");
+          msg.classList.add("hidden");
+          fetch("/api/book", {
+            method: "POST",
+            headers: Object.assign(
+              { "Content-Type": "application/json" },
+              authHeaders()
+            ),
+            body: JSON.stringify({ start: gSheetStartISO, duration_hours: gSheetHours }),
+          })
+            .then(function (r) {
+              if (r.status === 409) throw new Error("That slot was just taken. Refresh and pick another time.");
+              if (!r.ok) {
+                return r.text().then(function (txt) {
+                  if (r.status === 400) {
+                    try {
+                      var j = JSON.parse(txt);
+                      if (j && j.code === "profile_incomplete") {
+                        openProfileModal();
+                        throw new Error(j.message || "Complete your studio profile before booking.");
+                      }
+                    } catch (e) {
+                      if (!(e instanceof SyntaxError)) {
+                        throw e;
+                      }
+                    }
+                  }
+                  var m = (txt || "").trim().replace(/\s+/g, " ");
+                  throw new Error(m || "Booking failed (" + r.status + ").");
+                });
+              }
+              closeBookSheet();
+              return load(true);
+            })
+            .catch(function (e) {
+              msg.textContent = (e && e.message) || "Could not book.";
+              msg.classList.remove("hidden");
+            });
+        });
 
         setInterval(function () {
           if (document.visibilityState === "visible") {

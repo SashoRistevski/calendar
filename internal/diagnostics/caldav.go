@@ -10,24 +10,22 @@ import (
 	"github.com/sasho/calendar-availability-proxy/internal/availability"
 )
 
-// Report describes CalDAV connectivity and what the server returns (no event titles or descriptions).
 type Report struct {
-	OK            bool           `json:"ok"`
-	CalendarPath  string         `json:"calendar_path"`
-	QueryWindow   WindowUTC      `json:"query_window_utc"`
-	Principal     Step           `json:"principal"`
-	CalendarHome  Step           `json:"calendar_home"`
-	Collection    CollectionStep `json:"collection"`
-	ReadDir       ReadDirStep    `json:"read_dir"`
-	QueryExpand   QueryStep      `json:"calendar_query_expand"`
-	QueryPlain    QueryStep      `json:"calendar_query_plain"`
-	// AvailabilityPreview counts slots from plain calendar-query (SKIP_TRANSPARENT=false) for two floating-time interpretations.
+	OK                  bool                `json:"ok"`
+	CalendarPath        string              `json:"calendar_path"`
+	QueryWindow         WindowUTC           `json:"query_window_utc"`
+	Principal           Step                `json:"principal"`
+	CalendarHome        Step                `json:"calendar_home"`
+	Collection          CollectionStep      `json:"collection"`
+	ReadDir             ReadDirStep         `json:"read_dir"`
+	QueryExpand         QueryStep           `json:"calendar_query_expand"`
+	QueryPlain          QueryStep           `json:"calendar_query_plain"`
 	AvailabilityPreview AvailabilityPreview `json:"availability_preview"`
 	FirstResource       *ResourceProbe      `json:"first_calendar_resource,omitempty"`
 }
 
 type AvailabilityPreview struct {
-	SlotsFloatingAsUTC        int `json:"slots_floating_as_utc"`
+	SlotsFloatingAsUTC      int `json:"slots_floating_as_utc"`
 	SlotsFloatingAsWindowTZ int `json:"slots_floating_as_window_tz"`
 }
 
@@ -58,21 +56,20 @@ type ReadDirStep struct {
 }
 
 type QueryStep struct {
-	OK           bool `json:"ok"`
-	ObjectCount  int  `json:"object_count"`
-	WithCalendar int  `json:"objects_with_parsed_calendar"`
+	OK           bool   `json:"ok"`
+	ObjectCount  int    `json:"object_count"`
+	WithCalendar int    `json:"objects_with_parsed_calendar"`
 	Error        string `json:"error,omitempty"`
 }
 
 type ResourceProbe struct {
-	Path              string   `json:"path"`
-	OK                bool     `json:"get_ok"`
-	Error             string   `json:"error,omitempty"`
-	TopChildNames     []string `json:"vcalendar_child_names,omitempty"`
-	VEVENTCount       int      `json:"vevent_component_count"`
+	Path          string   `json:"path"`
+	OK            bool     `json:"get_ok"`
+	Error         string   `json:"error,omitempty"`
+	TopChildNames []string `json:"vcalendar_child_names,omitempty"`
+	VEVENTCount   int      `json:"vevent_component_count"`
 }
 
-// CalDAVProbe runs a safe, read-only sequence against iCloud (or any CalDAV server).
 func CalDAVProbe(ctx context.Context, client *caldav.Client, calendarPath string, loc *time.Location) Report {
 	r := Report{CalendarPath: calendarPath}
 	qs, qe := availability.QueryWindow(loc, time.Now())

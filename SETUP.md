@@ -2,6 +2,8 @@
 
 This service reads one iCloud calendar with an **App-Specific Password** (never your Apple ID password).
 
+For the end-to-end path from CalDAV to the browser (query window, cache, parsing, JSON, FullCalendar), see **[DATA_FLOW.md](./DATA_FLOW.md)**.
+
 ## 1. Generate an App-Specific Password
 
 1. Sign in at [https://appleid.apple.com/](https://appleid.apple.com/).
@@ -105,7 +107,30 @@ You can also use the included `render.yaml` with **Blueprint** if you prefer inf
 
 If diagnostics show **`read_dir` error** mentioning `DAV: resourcetype` / **404**, but **`calendar_query_*`** report several objects — that is normal on iCloud; listing uses a different `PROPFIND` shape than Apple supports well. The app uses **calendar-query REPORT** for data, which is what matters.
 
+## Phase 2: Supabase auth, booking, SMTP
+
+1. **Supabase** — Create a project. Add a `public.profiles` table with at least:
+   - `id uuid primary key references auth.users (id) on delete cascade`
+   - `full_name text` and `phone_number text` (both required before booking for **non-admins**; `PUT /api/profile` updates them). Admins (`app_metadata.is_admin`) skip the profile gate in the API and UI; optional: fill `full_name` / `phone_number` for display.
+   Prefer a trigger so new `auth.users` rows get a matching `profiles` row. If a user has no row yet, **`PUT /api/profile` inserts one** (`id` = auth user id, optional `email` from the session) so saving the studio profile still works.
+
+2. **Admin users** — In the Supabase dashboard (Authentication → user) set **App metadata** JSON to include `"is_admin": true` (or use SQL on `auth.users.raw_app_meta_data`). JWTs issued after that change will carry `app_metadata.is_admin`.
+
+3. **Environment variables** (all optional until you enable booking):
+
+   | Variable | Purpose |
+   |----------|---------|
+   | `SUPABASE_JWT_SECRET` | Optional. Legacy **JWT Secret** (HS256). Newer projects may use **asymmetric** signing keys; the Go server then falls back to `GET /auth/v1/user` using `SUPABASE_URL` + `SUPABASE_ANON_KEY`, so keep those set even if HS256 verification fails. |
+   | `SUPABASE_URL` | Project URL (`https://xxx.supabase.co`). |
+   | `SUPABASE_ANON_KEY` | **Anon** key — used by the browser (public config) and by the **server** to validate sessions via Supabase Auth when HS256 verification does not apply. |
+   | `SUPABASE_SERVICE_ROLE_KEY` | **Service role** — server only; used to read and patch `profiles`. Never expose to clients. |
+   | `SMTP_HOST`, `SMTP_PORT` (default 587), `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | Gmail (or other) SMTP for booking confirmation emails (`net/smtp`, STARTTLS via port 587). Use an [App Password](https://myaccount.google.com/apppasswords) for Google. |
+
+4. **APIs** — `GET /api/availability` with `Authorization: Bearer <access_token>` returns **Occupied** labels for signed-in non-admins; **admins** get `band_name`, `phone`, `email` parsed from calendar data. `GET /api/me` returns `email`, `is_admin`, `full_name`, `phone_number`, and `profile_complete` (always `true` for admins so the profile modal never blocks them). `PUT /api/profile` with JSON `{ "full_name", "phone_number" }` saves the signed-in user’s row. `POST /api/book` returns **400** + `profile_incomplete` for incomplete **non-admin** profiles; **admins** skip that check (empty fields get email-derived name and an em dash in the event title). Successful bookings write `REHEARSAL: Name (Phone)` with email in `DESCRIPTION`.
+
+5. **Timezone** — All booking times and the UI use **Europe/Skopje**. Set `EVENT_PARSE_TIMEZONE=Europe/Skopje` if your ICS uses floating local times.
+
 ## Security notes
 
 - Rotate the app-specific password if it leaks; revoke it from the same Apple ID page.
-- The public API never returns titles, locations, descriptions, or attendee data—only busy intervals as `start` / `end`.
+- Without a valid admin JWT, `GET /api/availability` does not return band names or contact fields—only `start` / `end` (and `title: "Occupied"` when a non-admin is signed in).

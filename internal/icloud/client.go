@@ -13,7 +13,6 @@ import (
 
 const DefaultCalDAVBase = "https://caldav.icloud.com"
 
-// iCloud often responds 403 to Go's default User-Agent; mimic Apple Calendar's DAV client.
 const calDAVUserAgent = "Mac OS X/15.0 (24A335) CalendarAgent/9.0"
 
 type userAgentRT struct {

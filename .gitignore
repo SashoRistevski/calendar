@@ -1,6 +1,16 @@
-env
+.env
 .env.*
 *.exe
 dist/
-# Binary built at repo root (do not use plain "server" — it ignores cmd/server/)
 /server
+*.log
+*.pem
+*.key
+.idea/
+.vscode/
+coverage.out
+coverage.html
+/tmp/
+tmp/
+.DS_Store
+Thumbs.db
