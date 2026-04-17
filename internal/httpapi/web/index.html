@@ -32,6 +32,12 @@
         font-variant-numeric: tabular-nums;
       }
 
+      #calendar,
+      #calendar .fc {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+      }
+
       .fc {
         --fc-border-color: rgb(148 163 184 / 0.1);
         --fc-page-bg-color: transparent;
@@ -209,7 +215,7 @@
 
       @media (max-width: 768px) {
         :root {
-          --slot-h: 3.5rem;
+          --slot-h: 2.875rem;
         }
         .fc .fc-col-header-cell {
           padding: 0.4rem 0.2rem;
@@ -301,6 +307,11 @@
           id="calendar"
           class="rounded-2xl border border-slate-700/70 bg-slate-900/50 p-2 shadow-xl shadow-black/25 ring-1 ring-white/[0.06] backdrop-blur-md sm:p-3"
         ></div>
+        <p
+          id="book-view-hint"
+          class="mt-2 hidden rounded-lg border border-amber-900/40 bg-amber-950/35 px-3 py-2 text-center text-xs text-amber-200/95"
+          role="status"
+        ></p>
         <div
           class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-slate-800/80 pt-3 text-xs text-slate-400"
           role="note"
@@ -312,7 +323,7 @@
           </span>
           <span class="inline-flex items-center gap-2 rounded-full border border-slate-700/80 bg-slate-900/60 px-2.5 py-1">
             <span class="inline-block h-3 w-4 shrink-0 rounded-sm bg-slate-700/50 ring-1 ring-slate-600/50" aria-hidden="true"></span>
-            <span>Free in grid — confirm before booking</span>
+            <span class="hidden sm:inline">Free in grid — </span><span>tap a time (Day/Week) to book · not Agenda</span>
           </span>
           <span class="inline-flex flex-wrap items-center gap-x-1.5 gap-y-1 text-slate-500">
             <span class="text-slate-600">·</span>
@@ -711,11 +722,42 @@
             });
         }
 
+        function applyResponsiveSlotGrid() {
+          if (!calendar) return;
+          var narrow = window.innerWidth < 768;
+          if (narrow) {
+            calendar.setOption("slotDuration", "00:30:00");
+            calendar.setOption("slotLabelInterval", "01:00:00");
+            calendar.setOption(
+              "height",
+              Math.min(680, Math.max(440, Math.floor(window.innerHeight * 0.5)))
+            );
+          } else {
+            calendar.setOption("slotDuration", "01:00:00");
+            calendar.setOption("slotLabelInterval", "01:00:00");
+            calendar.setOption("height", 620);
+          }
+        }
+
+        function syncBookViewHint(viewType) {
+          var el = document.getElementById("book-view-hint");
+          if (!el) return;
+          if (viewType === "listWeek") {
+            el.classList.remove("hidden");
+            el.textContent =
+              "Agenda view is read-only for booking. Switch to Day or Week, then tap a free slot (half-hour grid on phones).";
+          } else {
+            el.classList.add("hidden");
+            el.textContent = "";
+          }
+        }
+
         var el = document.getElementById("calendar");
         calendar = new FullCalendar.Calendar(el, {
           timeZone: TZ,
           firstDay: 1,
           initialView: pickTimeGridView(),
+          longPressDelay: 0,
           views: {
             timeGridThreeDay: {
               type: "timeGrid",
@@ -751,6 +793,13 @@
             if (info.view.type !== next) {
               calendar.changeView(next, calendar.getDate());
             }
+            applyResponsiveSlotGrid();
+          },
+          datesSet: function (info) {
+            syncBookViewHint(info.view.type);
+            if (info.view.type !== "listWeek") {
+              applyResponsiveSlotGrid();
+            }
           },
           height: 620,
           expandRows: false,
@@ -783,7 +832,7 @@
           eventInteractive: false,
           dateClick: function (info) {
             if (info.allDay) return;
-            if (!gSession || !gSession.access_token || gMe.is_admin) return;
+            if (!gSession || !gSession.access_token) return;
             gSheetStartISO = sheetStartFromDateClick(info);
             if (!gSheetStartISO) {
               return;
@@ -793,6 +842,8 @@
           },
         });
         calendar.render();
+        applyResponsiveSlotGrid();
+        syncBookViewHint(calendar.view.type);
 
         function setAuthUi() {
           var st = document.getElementById("auth-status");
