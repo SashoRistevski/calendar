@@ -14,3 +14,9 @@ coverage.html
 tmp/
 .DS_Store
 Thumbs.db
+
+SETUP.md
+DATA_FLOW.md
+render.yaml
+nul
+NUL
