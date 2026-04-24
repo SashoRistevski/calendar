@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Studio Porta Vlae · availability</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -21,8 +21,16 @@
         /* Space between calendar left edge and hour labels */
         --fc-time-axis-pad-left: 0.75rem;
       }
+      html {
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+      }
       body {
         font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+        overflow-x: clip;
+        min-height: 100dvh;
+        min-height: 100svh;
+        box-sizing: border-box;
       }
       .font-time,
       .fc .fc-timegrid-slot-label,
@@ -38,8 +46,56 @@
         -webkit-tap-highlight-color: transparent;
       }
 
+      .touch-target {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .sheet-time-wrap {
+        position: relative;
+        z-index: 0;
+        width: 100%;
+        max-width: 100%;
+        border: 1px solid rgb(71 85 105);
+        border-radius: 0.5rem;
+        background: rgb(2 6 23);
+        box-sizing: border-box;
+        overflow: hidden;
+        isolation: isolate;
+      }
+      .sheet-time-wrap input[type="time"] {
+        -webkit-appearance: none;
+        appearance: none;
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        margin: 0;
+        border: 0;
+        border-radius: 0.45rem;
+        background: transparent;
+        color: #f1f5f9;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-variant-numeric: tabular-nums;
+        font-size: 1rem;
+        line-height: 1.4;
+        text-align: center;
+        min-height: max(2.75rem, 44px);
+        padding: 0.65rem 0.9rem;
+        background-clip: padding-box;
+      }
+      .sheet-time-wrap input[type="time"]::-webkit-date-and-time-value {
+        text-align: center;
+        display: block;
+        width: 100%;
+      }
+      .sheet-time-wrap input[type="time"]:focus {
+        outline: none;
+        box-shadow: inset 0 0 0 2px rgba(245 158 11 / 0.35);
+      }
+
       .fc {
-        --fc-border-color: rgb(148 163 184 / 0.1);
+        --fc-border-color: #334155;
         --fc-page-bg-color: transparent;
         --fc-neutral-bg-color: rgb(51 65 85 / 0.22);
         --fc-today-bg-color: rgb(59 130 246 / 0.08);
@@ -62,7 +118,7 @@
         text-transform: uppercase;
         color: rgb(148 163 184);
         background: rgb(15 23 42 / 0.92);
-        border-color: rgb(148 163 184 / 0.1) !important;
+        border-color: #334155 !important;
       }
 
       /* Fixed slot height: 2h event = exactly 2× 1h (expandRows off; no min-height stretch) */
@@ -79,8 +135,9 @@
         background: var(--today-tint);
       }
       .fc .fc-timegrid-slot-label {
-        font-size: 0.72rem;
-        color: rgb(148 163 184);
+        font-size: 0.76rem;
+        font-weight: 600;
+        color: #cbd5e1;
         vertical-align: top;
         padding: 0 0 0 var(--fc-time-axis-pad-left);
       }
@@ -99,8 +156,9 @@
         box-sizing: border-box;
       }
       .fc .fc-timegrid-axis-cushion {
-        font-size: 0.7rem;
-        color: rgb(100 116 139);
+        font-size: 0.74rem;
+        font-weight: 600;
+        color: #cbd5e1;
       }
 
       /* Booked: solid crimson tint + left bar + glass */
@@ -150,10 +208,10 @@
       .fc .fc-scrollgrid {
         border-radius: 0.75rem;
         overflow: hidden;
-        border-color: rgb(148 163 184 / 0.12) !important;
+        border-color: #334155 !important;
       }
       .fc .fc-scrollgrid-section > td {
-        border-color: rgb(148 163 184 / 0.1) !important;
+        border-color: #334155 !important;
       }
 
       /* Now line: amber glow; stacking handled below so line stays above events */
@@ -213,6 +271,15 @@
         z-index: 32 !important;
       }
 
+      #auth-modal,
+      #profile-modal {
+        padding: max(1rem, env(safe-area-inset-top, 0.25rem))
+          max(1rem, env(safe-area-inset-right, 0.25rem))
+          max(1.25rem, env(safe-area-inset-bottom, 0.5rem))
+          max(1rem, env(safe-area-inset-left, 0.25rem));
+        box-sizing: border-box;
+      }
+
       @media (max-width: 768px) {
         :root {
           --slot-h: 2.875rem;
@@ -252,6 +319,19 @@
         .fc .fc-v-event.booked-bg .fc-event-time {
           display: none !important;
         }
+        .sheet-dur,
+        #sheet-confirm,
+        #sheet-profile-cta {
+          min-height: 2.75rem;
+        }
+        #sheet-close {
+          min-width: 2.75rem;
+          min-height: 2.75rem;
+        }
+        #auth-modal input,
+        #profile-modal input {
+          font-size: 1rem;
+        }
       }
 
       @media (max-width: 480px) {
@@ -261,8 +341,8 @@
       }
     </style>
   </head>
-  <body class="min-h-screen bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900 text-slate-100 antialiased">
-    <div class="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+  <body class="min-h-screen bg-[#0F172A] text-[#F8FAFC] antialiased">
+    <div class="mx-auto max-w-6xl touch-manipulation px-3 pt-[max(1.25rem,env(safe-area-inset-top,0.25rem))] pb-8 sm:px-6 sm:pt-8">
       <header class="mb-6 max-w-3xl space-y-3">
         <h1 class="text-xl font-semibold tracking-tight text-white sm:text-2xl md:text-3xl">
           <span class="text-slate-200">Booked times</span>
@@ -275,15 +355,27 @@
           <button
             type="button"
             id="btn-open-auth"
-            class="rounded-lg border border-slate-600 bg-slate-800/80 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700"
+            class="touch-target min-h-[44px] rounded-[8px] bg-[#0D9488] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-teal-900/40 hover:bg-teal-600"
+          >Register account</button>
+          <button
+            type="button"
+            id="btn-open-auth-signin"
+            class="touch-target min-h-[44px] rounded-lg border border-teal-500/80 px-3 py-1.5 text-xs font-semibold text-teal-100 hover:bg-teal-900/30"
           >
             Sign in
           </button>
           <span id="auth-status" class="hidden text-xs text-slate-400"></span>
           <button
             type="button"
+            id="btn-profile"
+            class="touch-target hidden min-h-[44px] rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-slate-200 hover:border-teal-500/60 hover:text-white"
+          >
+            Profile
+          </button>
+          <button
+            type="button"
             id="btn-sign-out"
-            class="hidden rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-400 hover:text-white"
+            class="touch-target hidden min-h-[44px] rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-400 hover:text-white"
           >
             Sign out
           </button>
@@ -294,7 +386,7 @@
             target="_blank"
             rel="noopener noreferrer"
             class="font-medium text-sky-400 underline decoration-sky-400/40 underline-offset-2 transition hover:text-sky-300 hover:decoration-sky-300"
-            >Studio Porta Vlae — open in Google Maps</a>
+            >Location on map</a>
         </p>
         <p class="text-xs text-slate-500">
           Auto-sync every 2 minutes while the tab is open, plus once when you return from another tab.
@@ -385,7 +477,7 @@
               <tbody id="slot-rows" class="divide-y divide-slate-800/80"></tbody>
             </table>
           </div>
-          <p id="slot-empty" class="hidden px-4 py-10 text-center text-sm text-slate-500">
+          <p id="slot-empty" class="hidden m-4 rounded-xl border border-slate-700/80 bg-slate-900/40 px-4 py-10 text-center text-sm text-slate-400">
             No busy slots in the current window.
           </p>
           <p id="slot-error" class="hidden border-t border-red-900/50 bg-red-950/30 px-4 py-3 text-center text-sm text-red-300">
@@ -396,15 +488,14 @@
     </div>
 
     <div
-      id="auth-modal"
-      class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+      id="auth-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/60 backdrop-blur-[8px]"
       role="dialog"
       aria-modal="true"
       aria-labelledby="auth-modal-title"
     >
-      <div class="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl">
-        <h2 id="auth-modal-title" class="mb-4 text-lg font-semibold text-white">Studio account</h2>
-        <p class="mb-4 text-xs text-slate-500">Uses Supabase. Set SUPABASE_URL and keys on the server.</p>
+      <div class="w-full max-w-md rounded-2xl border border-slate-600 bg-[#1E293B] p-6 shadow-2xl">
+        <h2 id="auth-modal-title" class="mb-2 text-lg font-semibold text-white">Porta Vlae Studio Account</h2>
+        <p id="auth-mode-desc" class="mb-4 text-xs text-slate-400">Log in to your account.</p>
         <label class="mb-2 block text-xs font-medium text-slate-400">Email</label>
         <input
           id="auth-email"
@@ -423,17 +514,15 @@
         <div class="flex flex-wrap gap-2">
           <button
             type="button"
-            id="auth-login"
-            class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-500"
+            id="auth-login" class="rounded-lg border border-teal-500/80 px-4 py-2 text-sm font-semibold text-teal-100 hover:bg-teal-900/40"
           >
             Log in
           </button>
           <button
             type="button"
-            id="auth-signup"
-            class="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+            id="auth-signup" class="rounded-lg bg-[#0D9488] px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600"
           >
-            Sign up
+            Register account
           </button>
           <button type="button" id="auth-close" class="ml-auto text-sm text-slate-500 hover:text-white">Cancel</button>
         </div>
@@ -441,13 +530,12 @@
     </div>
 
     <div
-      id="profile-modal"
-      class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+      id="profile-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/60 backdrop-blur-[8px]"
       role="dialog"
       aria-modal="true"
       aria-labelledby="profile-modal-title"
     >
-      <div class="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl">
+      <div class="w-full max-w-md rounded-2xl border border-slate-600 bg-[#1E293B] p-6 shadow-2xl">
         <h2 id="profile-modal-title" class="mb-2 text-lg font-semibold text-white">Complete your Studio Profile</h2>
         <p class="mb-4 text-xs leading-relaxed text-slate-400">
           Add your full name and phone number so rehearsal bookings appear on the studio calendar as
@@ -471,8 +559,7 @@
         <div class="flex flex-wrap gap-2">
           <button
             type="button"
-            id="profile-save"
-            class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-500"
+            id="profile-save" class="rounded-lg bg-[#0D9488] px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600"
           >
             Save profile
           </button>
@@ -482,50 +569,53 @@
     </div>
 
     <div
-      id="book-sheet"
-      class="fixed inset-x-0 bottom-0 z-[90] hidden translate-y-full border-t border-slate-700 bg-slate-900/98 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-12px_40px_rgba(0,0,0,0.45)] transition-transform duration-200 sm:inset-x-auto sm:right-4 sm:bottom-4 sm:max-w-md sm:rounded-2xl sm:border sm:p-5"
+      id="book-sheet" class="fixed inset-x-0 bottom-0 z-[90] hidden translate-y-full border-t border-slate-600 bg-[#1E293B] touch-manipulation pt-4 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))] shadow-[0_-18px_44px_rgba(0,0,0,0.55)] transition-transform duration-200 sm:inset-x-auto sm:right-4 sm:bottom-4 sm:max-w-md sm:rounded-2xl sm:border sm:p-5 sm:pb-[max(1.25rem,env(safe-area-inset-bottom,0px))]"
       role="dialog"
       aria-modal="true"
     >
       <div class="mb-3 flex items-start justify-between gap-2">
         <div>
-          <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Book rehearsal</p>
+          <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Confirm Booking</p>
           <p id="sheet-when" class="font-time text-sm text-slate-200"></p>
         </div>
-        <button type="button" id="sheet-close" class="rounded p-1 text-slate-500 hover:bg-slate-800 hover:text-white" aria-label="Close">
+        <button type="button" id="sheet-close" class="rounded-full border border-slate-500/80 p-1.5 text-slate-200 hover:bg-slate-700 hover:text-white" aria-label="Close">
           ✕
         </button>
       </div>
-      <p class="mb-3 text-xs text-slate-500">Pick a duration. We re-check the calendar when you confirm.</p>
-      <div class="mb-4 flex flex-wrap gap-2">
-        <button type="button" data-hours="2" class="sheet-dur rounded-xl border border-slate-600 px-4 py-3 text-sm font-medium text-slate-100 hover:border-sky-500/60 hover:bg-slate-800">
+      <p class="mb-3 text-xs text-slate-500">Adjust start time (Europe/Skopje), then pick duration. We re-check the calendar when you confirm.</p>
+      <div class="mb-4">
+        <label for="sheet-start" class="mb-1.5 block text-xs font-medium text-slate-400">Start time</label>
+        <div class="sheet-time-wrap" id="sheet-time-wrap">
+          <input id="sheet-start" type="time" step="900" />
+        </div>
+      </div>
+      <p class="mb-2 text-xs text-slate-500">Duration</p>
+      <div class="mb-4 grid grid-cols-3 gap-2">
+        <button type="button" data-hours="2" class="sheet-dur rounded-xl border border-slate-500 bg-slate-800/60 px-3 py-3 text-sm font-semibold text-slate-100 hover:border-amber-500/70 hover:bg-slate-700/80">
           2 h
         </button>
-        <button type="button" data-hours="3" class="sheet-dur rounded-xl border border-slate-600 px-4 py-3 text-sm font-medium text-slate-100 hover:border-sky-500/60 hover:bg-slate-800">
+        <button type="button" data-hours="3" class="sheet-dur rounded-xl border border-slate-500 bg-slate-800/60 px-3 py-3 text-sm font-semibold text-slate-100 hover:border-amber-500/70 hover:bg-slate-700/80">
           3 h
         </button>
-        <button type="button" data-hours="4" class="sheet-dur rounded-xl border border-slate-600 px-4 py-3 text-sm font-medium text-slate-100 hover:border-sky-500/60 hover:bg-slate-800">
+        <button type="button" data-hours="4" class="sheet-dur rounded-xl border border-slate-500 bg-slate-800/60 px-3 py-3 text-sm font-semibold text-slate-100 hover:border-amber-500/70 hover:bg-slate-700/80">
           4 h
         </button>
       </div>
       <p id="sheet-msg" class="mb-3 hidden text-xs text-amber-300"></p>
       <button
         type="button"
-        id="sheet-profile-cta"
-        class="mb-3 hidden w-full rounded-xl border border-sky-600/60 bg-sky-950/40 py-3 text-sm font-semibold text-sky-200 hover:bg-sky-900/50"
+        id="sheet-profile-cta" class="mb-3 hidden w-full rounded-xl border border-teal-500/70 bg-teal-900/40 py-3 text-sm font-semibold text-teal-100 hover:bg-teal-800/50"
       >
         Complete studio profile
       </button>
       <button
         type="button"
-        id="sheet-confirm"
-        disabled
-        class="w-full rounded-xl bg-rose-600 py-3 text-sm font-semibold text-white hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-40"
+        id="sheet-confirm" disabled class="w-full rounded-xl bg-[#0D9488] py-3 text-sm font-semibold text-white hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-40"
       >
         Confirm booking
       </button>
     </div>
-    <div id="book-sheet-scrim" class="fixed inset-0 z-[80] hidden bg-black/40" aria-hidden="true"></div>
+    <div id="book-sheet-scrim" class="fixed inset-0 z-[80] hidden bg-black/60 backdrop-blur-[8px]" aria-hidden="true"></div>
 
     <script>
       (function () {
@@ -568,7 +658,71 @@
         var gSession = null;
         var gMe = { is_admin: false, email: "", full_name: "", phone_number: "", profile_complete: false };
         var gSheetStartISO = null;
+        var gSheetOpenIso = null;
         var gSheetHours = 0;
+
+        function getSkopjeHM(iso) {
+          var p = new Intl.DateTimeFormat("en-GB", {
+            timeZone: TZ,
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+          }).formatToParts(new Date(iso));
+          var hh = "00";
+          var mm = "00";
+          p.forEach(function (x) {
+            if (x.type === "hour") hh = x.value;
+            if (x.type === "minute") mm = x.value;
+          });
+          return { hh: hh, mm: mm };
+        }
+
+        function updateSheetWhenLabel() {
+          var when = document.getElementById("sheet-when");
+          if (!when || !gSheetStartISO) return;
+          var d = new Date(gSheetStartISO);
+          when.textContent =
+            dateFmt.format(d) +
+            " " +
+            timeFmt.format(d) +
+            " (" +
+            TZ +
+            ") \u00b7 " +
+            (gSheetHours ? gSheetHours + " h" : "choose duration");
+        }
+
+        function setAuthView(mode) {
+          var login = document.getElementById("auth-login");
+          var sup = document.getElementById("auth-signup");
+          var desc = document.getElementById("auth-mode-desc");
+          var err = document.getElementById("auth-error");
+          if (!login || !sup || !desc) return;
+          err.classList.add("hidden");
+          err.classList.add("text-red-400");
+          err.classList.remove("text-sky-400");
+          if (mode === "register") {
+            login.classList.add("hidden");
+            sup.classList.remove("hidden");
+            desc.textContent =
+              "Create an account. You\u2019ll confirm by email, then you can sign in.";
+          } else {
+            sup.classList.add("hidden");
+            login.classList.remove("hidden");
+            desc.textContent = "Log in to your account.";
+          }
+        }
+
+        function formatAuthError(e) {
+          var m = (e && e.message) || "Something went wrong";
+          var low = m.toLowerCase();
+          if (low.indexOf("registered") >= 0 || low.indexOf("already been registered") >= 0) {
+            return "That email is already registered. Sign in or use a different address.";
+          }
+          if (low.indexOf("user already") >= 0) {
+            return "That email is already registered. Sign in or use a different address.";
+          }
+          return m;
+        }
 
         function sheetStartFromDateClick(info) {
           if (info.dateStr) {
@@ -848,16 +1002,22 @@
         function setAuthUi() {
           var st = document.getElementById("auth-status");
           var bo = document.getElementById("btn-open-auth");
+          var bi = document.getElementById("btn-open-auth-signin");
           var so = document.getElementById("btn-sign-out");
+          var pr = document.getElementById("btn-profile");
           if (gSession && gSession.access_token) {
             bo.classList.add("hidden");
+            if (bi) bi.classList.add("hidden");
             st.classList.remove("hidden");
             so.classList.remove("hidden");
+            if (pr) pr.classList.remove("hidden");
             st.textContent = gMe.email || "Signed in";
           } else {
             bo.classList.remove("hidden");
+            if (bi) bi.classList.remove("hidden");
             st.classList.add("hidden");
             so.classList.add("hidden");
+            if (pr) pr.classList.add("hidden");
           }
         }
 
@@ -927,25 +1087,23 @@
 
         function openBookSheet() {
           if (!gSheetStartISO) return;
+          gSheetOpenIso = gSheetStartISO;
           var sheet = document.getElementById("book-sheet");
           var scrim = document.getElementById("book-sheet-scrim");
-          var when = document.getElementById("sheet-when");
           var msg = document.getElementById("sheet-msg");
           var conf = document.getElementById("sheet-confirm");
+          var timeIn = document.getElementById("sheet-start");
           msg.classList.add("hidden");
           conf.disabled = true;
           gSheetHours = 0;
           document.querySelectorAll(".sheet-dur").forEach(function (b) {
-            b.classList.remove("border-sky-500", "bg-slate-800");
+            b.classList.remove("border-amber-500", "bg-amber-900/40", "text-amber-100");
           });
-          var startAsDate = new Date(gSheetStartISO);
-          when.textContent =
-            dateFmt.format(startAsDate) +
-            " " +
-            timeFmt.format(startAsDate) +
-            " (" +
-            TZ +
-            ") · pick duration";
+          if (timeIn) {
+            var t0 = getSkopjeHM(gSheetStartISO);
+            timeIn.value = t0.hh + ":" + t0.mm;
+          }
+          updateSheetWhenLabel();
           scrim.classList.remove("hidden");
           sheet.classList.remove("hidden");
           requestAnimationFrame(function () {
@@ -963,6 +1121,7 @@
             scrim.classList.add("hidden");
           }, 200);
           gSheetStartISO = null;
+          gSheetOpenIso = null;
           gSheetHours = 0;
         }
 
@@ -998,11 +1157,26 @@
             return load(false);
           });
 
-        document.getElementById("btn-open-auth").addEventListener("click", function () {
+        document.getElementById("btn-open-auth-signin").addEventListener("click", function () {
+          setAuthView("signin");
           document.getElementById("auth-modal").classList.remove("hidden");
           document.getElementById("auth-modal").classList.add("flex");
           document.getElementById("auth-error").classList.add("hidden");
         });
+        document.getElementById("btn-open-auth").addEventListener("click", function () {
+          setAuthView("register");
+          document.getElementById("auth-modal").classList.remove("hidden");
+          document.getElementById("auth-modal").classList.add("flex");
+          document.getElementById("auth-error").classList.add("hidden");
+        });
+        (function () {
+          var btnPr = document.getElementById("btn-profile");
+          if (btnPr) {
+            btnPr.addEventListener("click", function () {
+              openProfileModal();
+            });
+          }
+        })();
         function closeAuth() {
           var m = document.getElementById("auth-modal");
           m.classList.add("hidden");
@@ -1064,7 +1238,7 @@
             .catch(function (e) {
               err.classList.add("text-red-400");
               err.classList.remove("text-sky-400");
-              err.textContent = (e && e.message) || "Sign up failed";
+              err.textContent = formatAuthError(e) || "Registration failed";
               err.classList.remove("hidden");
             });
         });
@@ -1073,12 +1247,34 @@
           btn.addEventListener("click", function () {
             gSheetHours = parseInt(btn.getAttribute("data-hours"), 10) || 0;
             document.querySelectorAll(".sheet-dur").forEach(function (b) {
-              b.classList.remove("border-sky-500", "bg-slate-800");
+              b.classList.remove("border-amber-500", "bg-amber-900/40", "text-amber-100");
             });
-            btn.classList.add("border-sky-500", "bg-slate-800");
+            btn.classList.add("border-amber-500", "bg-amber-900/40", "text-amber-100");
+            updateSheetWhenLabel();
             updateSheetBookingUI();
           });
         });
+        var sheetStartEl = document.getElementById("sheet-start");
+        if (sheetStartEl) {
+          function applySheetStartFromInput() {
+            if (!gSheetOpenIso || !gSheetStartISO) return;
+            var v = sheetStartEl.value;
+            if (!v) return;
+            var p0 = getSkopjeHM(gSheetOpenIso);
+            var openMin = parseInt(p0.hh, 10) * 60 + parseInt(p0.mm, 10);
+            var parts = v.split(":");
+            var nh = parseInt(parts[0], 10);
+            var nm = parseInt(parts[1] || "0", 10);
+            if (isNaN(nh) || isNaN(nm)) return;
+            var newMin = nh * 60 + nm;
+            gSheetStartISO = new Date(
+              new Date(gSheetOpenIso).getTime() + (newMin - openMin) * 60 * 1000
+            ).toISOString();
+            updateSheetWhenLabel();
+          }
+          sheetStartEl.addEventListener("input", applySheetStartFromInput);
+          sheetStartEl.addEventListener("change", applySheetStartFromInput);
+        }
         document.getElementById("sheet-close").addEventListener("click", closeBookSheet);
         document.getElementById("book-sheet-scrim").addEventListener("click", closeBookSheet);
         document.getElementById("sheet-profile-cta").addEventListener("click", function () {
