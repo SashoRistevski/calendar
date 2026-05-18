@@ -724,6 +724,19 @@
           return m;
         }
 
+        var gAppPublicUrl = "";
+
+        function authRedirectUrl() {
+          var base = (gAppPublicUrl || window.location.origin || "").replace(/\/$/, "");
+          return base + "/";
+        }
+
+        function clearAuthHashFromUrl() {
+          if (!window.location.hash || window.location.hash.indexOf("access_token") < 0) return;
+          var clean = window.location.pathname + window.location.search;
+          window.history.replaceState({}, document.title, clean || "/");
+        }
+
         function sheetStartFromDateClick(info) {
           if (info.dateStr) {
             return info.dateStr;
@@ -1131,8 +1144,11 @@
             return r.json();
           })
           .then(function (cfg) {
+            gAppPublicUrl = (cfg && cfg.app_url) || "";
             if (typeof supabase !== "undefined" && cfg.supabase_url && cfg.supabase_anon_key) {
-              sb = supabase.createClient(cfg.supabase_url, cfg.supabase_anon_key);
+              sb = supabase.createClient(cfg.supabase_url, cfg.supabase_anon_key, {
+                auth: { detectSessionInUrl: true, persistSession: true },
+              });
               return sb.auth.getSession();
             }
             return { data: { session: null } };
@@ -1140,9 +1156,11 @@
           .then(function (res) {
             var sess = res && res.data && res.data.session;
             gSession = sess || null;
+            if (sess) clearAuthHashFromUrl();
             if (sb) {
               sb.auth.onAuthStateChange(function (_evt, session) {
                 gSession = session;
+                if (session) clearAuthHashFromUrl();
                 refreshMe().then(function () {
                   load(true);
                 });
@@ -1227,7 +1245,11 @@
           }
           err.classList.add("hidden");
           sb.auth
-            .signUp({ email: em, password: pw })
+            .signUp({
+              email: em,
+              password: pw,
+              options: { emailRedirectTo: authRedirectUrl() },
+            })
             .then(function (r) {
               if (r.error) throw r.error;
               err.textContent = "Check your email to confirm, then log in.";

@@ -95,6 +95,7 @@ func loadStudioDeps(client *caldav.Client, calendarPath string) *httpapi.StudioD
 		SupabaseURL:         strings.TrimSpace(os.Getenv("SUPABASE_URL")),
 		SupabaseServiceRole: strings.TrimSpace(os.Getenv("SUPABASE_SERVICE_ROLE_KEY")),
 		SupabaseAnonKey:     strings.TrimSpace(os.Getenv("SUPABASE_ANON_KEY")),
+		AppPublicURL:        strings.TrimRight(strings.TrimSpace(os.Getenv("APP_PUBLIC_URL")), "/"),
 		SMTPHost:            strings.TrimSpace(os.Getenv("SMTP_HOST")),
 		SMTPPort:            port,
 		SMTPUser:            strings.TrimSpace(os.Getenv("SMTP_USER")),

@@ -146,17 +146,54 @@ func (s *Server) supabaseAuthParams() (jwtSecret, supabaseURL, anonKey string) {
 		strings.TrimSpace(s.studio.SupabaseAnonKey)
 }
 
+// func (s *Server) handlePublicConfig(w http.ResponseWriter, r *http.Request) {
+// 	w.Header().Set("Content-Type", "application/json")
+// 	w.Header().Set("Cache-Control", "public, max-age=3600")
+// 	url, key := "", ""
+// 	if s.studio != nil {
+// 		url = strings.TrimSpace(s.studio.SupabaseURL)
+// 		key = strings.TrimSpace(s.studio.SupabaseAnonKey)
+// 	}
+// 	_ = json.NewEncoder(w).Encode(map[string]string{
+// 		"supabase_url":      url,
+// 		"supabase_anon_key": key,
+// 	})
+// }
+func publicAppURL(r *http.Request, configured string) string {
+	if u := strings.TrimRight(strings.TrimSpace(configured), "/"); u != "" {
+		return u
+	}
+	if r == nil {
+		return ""
+	}
+	host := strings.TrimSpace(r.Host)
+	if host == "" {
+		return ""
+	}
+	proto := "https"
+	if p := strings.TrimSpace(r.Header.Get("X-Forwarded-Proto")); p != "" {
+		proto = strings.ToLower(strings.TrimSpace(strings.Split(p, ",")[0]))
+	} else if r.TLS == nil {
+		proto = "http"
+	}
+	return proto + "://" + host
+}
+
 func (s *Server) handlePublicConfig(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "public, max-age=3600")
-	url, key := "", ""
+	url, key, appURL := "", "", ""
 	if s.studio != nil {
 		url = strings.TrimSpace(s.studio.SupabaseURL)
 		key = strings.TrimSpace(s.studio.SupabaseAnonKey)
+		appURL = publicAppURL(r, s.studio.AppPublicURL)
+	} else {
+		appURL = publicAppURL(r, "")
 	}
 	_ = json.NewEncoder(w).Encode(map[string]string{
 		"supabase_url":      url,
 		"supabase_anon_key": key,
+		"app_url":           appURL,
 	})
 }
 

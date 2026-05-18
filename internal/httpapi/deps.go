@@ -7,6 +7,7 @@ type StudioDeps struct {
 	SupabaseURL         string
 	SupabaseServiceRole string
 	SupabaseAnonKey     string
+	AppPublicURL        string
 	SMTPHost            string
 	SMTPPort            int
 	SMTPUser            string
