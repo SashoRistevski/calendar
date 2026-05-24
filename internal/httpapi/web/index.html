@@ -1375,13 +1375,10 @@
                 });
               }
               closeBookSheet();
+              var toast = document.getElementById("book-toast");
+              toast.classList.remove("hidden");
+              setTimeout(function () { toast.classList.add("hidden"); }, 4000);
               return load(true);
-            })
-            .catch(function (e) {
-              msg.textContent = (e && e.message) || "Could not book.";
-              msg.classList.remove("hidden");
-            });
-        });
 
         setInterval(function () {
           if (document.visibilityState === "visible") {
@@ -1396,5 +1393,8 @@
         });
       })();
     </script>
+    <div id="book-toast" class="fixed bottom-6 left-1/2 z-[200] hidden -translate-x-1/2 rounded-xl bg-teal-700 px-5 py-3 text-sm font-semibold text-white shadow-xl">
+  Booking confirmed! Check your email.
+</div>
   </body>
 </html>
