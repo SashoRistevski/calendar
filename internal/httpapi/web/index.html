@@ -1379,7 +1379,12 @@
               toast.classList.remove("hidden");
               setTimeout(function () { toast.classList.add("hidden"); }, 4000);
               return load(true);
-
+              })
+            .catch(function (e) {
+              msg.textContent = (e && e.message) || "Could not book.";
+              msg.classList.remove("hidden");
+            });
+        });        
         setInterval(function () {
           if (document.visibilityState === "visible") {
             load(true);
