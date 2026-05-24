@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -84,19 +83,13 @@ func main() {
 }
 
 func loadStudioDeps(client *caldav.Client, calendarPath string) *httpapi.StudioDeps {
-	port := 587
-	if v := strings.TrimSpace(os.Getenv("BREVO_API_KEY")); v != "" {
-		if n, err := strconv.Atoi(v); err == nil && n > 0 {
-			port = n
-		}
-	}
 	return &httpapi.StudioDeps{
 		JWTSecret:           strings.TrimSpace(os.Getenv("SUPABASE_JWT_SECRET")),
 		SupabaseURL:         strings.TrimSpace(os.Getenv("SUPABASE_URL")),
 		SupabaseServiceRole: strings.TrimSpace(os.Getenv("SUPABASE_SERVICE_ROLE_KEY")),
 		SupabaseAnonKey:     strings.TrimSpace(os.Getenv("SUPABASE_ANON_KEY")),
 		AppPublicURL:        strings.TrimRight(strings.TrimSpace(os.Getenv("APP_PUBLIC_URL")), "/"),
-		BrevoAPIKey: strings.TrimSpace(os.Getenv("BREVO_API_KEY")),
+		BrevoAPIKey:         strings.TrimSpace(os.Getenv("BREVO_API_KEY")),
 		CalDAV:              client,
 		CalendarPath:        calendarPath,
 	}
