@@ -85,7 +85,7 @@ func main() {
 
 func loadStudioDeps(client *caldav.Client, calendarPath string) *httpapi.StudioDeps {
 	port := 587
-	if v := strings.TrimSpace(os.Getenv("SMTP_PORT")); v != "" {
+	if v := strings.TrimSpace(os.Getenv("BREVO_API_KEY")); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			port = n
 		}
@@ -96,11 +96,7 @@ func loadStudioDeps(client *caldav.Client, calendarPath string) *httpapi.StudioD
 		SupabaseServiceRole: strings.TrimSpace(os.Getenv("SUPABASE_SERVICE_ROLE_KEY")),
 		SupabaseAnonKey:     strings.TrimSpace(os.Getenv("SUPABASE_ANON_KEY")),
 		AppPublicURL:        strings.TrimRight(strings.TrimSpace(os.Getenv("APP_PUBLIC_URL")), "/"),
-		SMTPHost:            strings.TrimSpace(os.Getenv("SMTP_HOST")),
-		SMTPPort:            port,
-		SMTPUser:            strings.TrimSpace(os.Getenv("SMTP_USER")),
-		SMTPPass:            strings.TrimSpace(os.Getenv("SMTP_PASS")),
-		SMTPFrom:            strings.TrimSpace(os.Getenv("SMTP_FROM")),
+		BrevoAPIKey: strings.TrimSpace(os.Getenv("BREVO_API_KEY")),
 		CalDAV:              client,
 		CalendarPath:        calendarPath,
 	}

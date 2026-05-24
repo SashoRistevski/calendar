@@ -482,23 +482,24 @@ func (s *Server) handleBook(w http.ResponseWriter, r *http.Request) {
 	}
 	s.src.Invalidate()
 
-	if s.studio.SMTPHost != "" && s.studio.SMTPPort > 0 && userEmail != "" {
-		subj := "Rehearsal booking confirmed"
-		msg := fmt.Sprintf(
-			"Your rehearsal is booked.\n\nWhen: %s – %s (Europe/Skopje)\nDuration: %d hours\n\nIf you need to change this, contact the studio.\n",
-			start.Format("2006-01-02 15:04"),
-			end.Format("15:04"),
-			req.DurationHours,
-		)
-		if err := mail.BookingConfirmation(s.studio.SMTPHost, s.studio.SMTPPort, s.studio.SMTPUser, s.studio.SMTPPass, s.studio.SMTPFrom, userEmail, subj, msg); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok", "smtp_error": err.Error()})
-			return
-		}
-	}
+	if s.studio.BrevoAPIKey != "" && userEmail != "" {
+    subj := "Rehearsal booking confirmed"
+    emailBody := fmt.Sprintf(
+        "Your rehearsal is booked.\n\nWhen: %s – %s (Europe/Skopje)\nDuration: %d hours\n\nIf you need to change this, contact the studio.\n",
+        start.Format("2006-01-02 15:04"),
+        end.Format("15:04"),
+        req.DurationHours,
+    )
+    brevoKey := s.studio.BrevoAPIKey
+    go func() {
+        if err := mail.BookingConfirmation(brevoKey, "studio.porta.vlae@gmail.com", "Studio Porta Vlae", userEmail, subj, emailBody); err != nil {
+            log.Printf("brevo: %v", err)
+        }
+    }()
+}
 
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+w.Header().Set("Content-Type", "application/json")
+_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
 
 func bookingNamePhone(ac *auth.Context, prof supabase.Profile) (name, phone string) {

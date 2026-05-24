@@ -8,11 +8,7 @@ type StudioDeps struct {
 	SupabaseServiceRole string
 	SupabaseAnonKey     string
 	AppPublicURL        string
-	SMTPHost            string
-	SMTPPort            int
-	SMTPUser            string
-	SMTPPass            string
-	SMTPFrom            string
+	BrevoAPIKey         string
 	CalDAV              *caldav.Client
 	CalendarPath        string
 }

@@ -1340,51 +1340,58 @@
               err.classList.remove("hidden");
             });
         });
-        document.getElementById("sheet-confirm").addEventListener("click", function () {
-          if (!gSession || !gSession.access_token || !gSheetStartISO || !gSheetHours) return;
-          if (!gMe.profile_complete && !gMe.is_admin) return;
-          var msg = document.getElementById("sheet-msg");
-          msg.classList.add("hidden");
-          fetch("/api/book", {
-            method: "POST",
-            headers: Object.assign(
-              { "Content-Type": "application/json" },
-              authHeaders()
-            ),
-            body: JSON.stringify({ start: gSheetStartISO, duration_hours: gSheetHours }),
-          })
-            .then(function (r) {
-              if (r.status === 409) throw new Error("That slot was just taken. Refresh and pick another time.");
-              if (!r.ok) {
-                return r.text().then(function (txt) {
-                  if (r.status === 400) {
-                    try {
-                      var j = JSON.parse(txt);
-                      if (j && j.code === "profile_incomplete") {
-                        openProfileModal();
-                        throw new Error(j.message || "Complete your studio profile before booking.");
-                      }
-                    } catch (e) {
-                      if (!(e instanceof SyntaxError)) {
-                        throw e;
-                      }
-                    }
+      document.getElementById("sheet-confirm").addEventListener("click", function () {
+      if (!gSession || !gSession.access_token || !gSheetStartISO || !gSheetHours) return;
+      if (!gMe.profile_complete && !gMe.is_admin) return;
+      var msg = document.getElementById("sheet-msg");
+      var btn = document.getElementById("sheet-confirm");
+      msg.classList.add("hidden");
+      btn.disabled = true;
+      btn.textContent = "Booking…";
+      fetch("/api/book", {
+        method: "POST",
+        headers: Object.assign(
+          { "Content-Type": "application/json" },
+          authHeaders()
+        ),
+        body: JSON.stringify({ start: gSheetStartISO, duration_hours: gSheetHours }),
+      })
+        .then(function (r) {
+          if (r.status === 409) throw new Error("That slot was just taken. Refresh and pick another time.");
+          if (!r.ok) {
+            return r.text().then(function (txt) {
+              if (r.status === 400) {
+                try {
+                  var j = JSON.parse(txt);
+                  if (j && j.code === "profile_incomplete") {
+                    openProfileModal();
+                    throw new Error(j.message || "Complete your studio profile before booking.");
                   }
-                  var m = (txt || "").trim().replace(/\s+/g, " ");
-                  throw new Error(m || "Booking failed (" + r.status + ").");
-                });
+                } catch (e) {
+                  if (!(e instanceof SyntaxError)) {
+                    throw e;
+                  }
+                }
               }
-              closeBookSheet();
-              var toast = document.getElementById("book-toast");
-              toast.classList.remove("hidden");
-              setTimeout(function () { toast.classList.add("hidden"); }, 4000);
-              return load(true);
-              })
-            .catch(function (e) {
-              msg.textContent = (e && e.message) || "Could not book.";
-              msg.classList.remove("hidden");
+              var m = (txt || "").trim().replace(/\s+/g, " ");
+              throw new Error(m || "Booking failed (" + r.status + ").");
             });
-        });        
+          }
+          closeBookSheet();
+          var toast = document.getElementById("book-toast");
+          toast.classList.remove("hidden");
+          setTimeout(function () { toast.classList.add("hidden"); }, 5000);
+          btn.disabled = false;
+          btn.textContent = "Confirm booking";
+          return load(true);
+        })
+        .catch(function (e) {
+          msg.textContent = (e && e.message) || "Could not book.";
+          msg.classList.remove("hidden");
+          btn.disabled = false;
+          btn.textContent = "Confirm booking";
+        });
+    });        
         setInterval(function () {
           if (document.visibilityState === "visible") {
             load(true);
@@ -1399,7 +1406,7 @@
       })();
     </script>
     <div id="book-toast" class="fixed bottom-6 left-1/2 z-[200] hidden -translate-x-1/2 rounded-xl bg-teal-700 px-5 py-3 text-sm font-semibold text-white shadow-xl">
-  Booking confirmed! Check your email.
+  Booking confirmed!
 </div>
   </body>
 </html>
