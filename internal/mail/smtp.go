@@ -2,8 +2,10 @@ package mail
 
 import (
 	"fmt"
+	"net"
 	"net/smtp"
 	"strings"
+	"time"
 )
 
 func BookingConfirmation(host string, port int, user, password, fromAddr, toUser string, subject, body string) error {
@@ -67,8 +69,8 @@ func BookingConfirmation(host string, port int, user, password, fromAddr, toUser
 }
 
 func extractEmail(addr string) string {
-    if i := strings.Index(addr, "<"); i >= 0 {
-        return strings.TrimSuffix(strings.TrimSpace(addr[i+1:]), ">")
-    }
-    return addr
+	if i := strings.Index(addr, "<"); i >= 0 {
+		return strings.TrimSuffix(strings.TrimSpace(addr[i+1:]), ">")
+	}
+	return addr
 }
