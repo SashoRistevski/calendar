@@ -490,9 +490,16 @@ func (s *Server) handleBook(w http.ResponseWriter, r *http.Request) {
 			end.Format("15:04"),
 			req.DurationHours,
 		)
-		if err := mail.BookingConfirmation(s.studio.SMTPHost, s.studio.SMTPPort, s.studio.SMTPUser, s.studio.SMTPPass, s.studio.SMTPFrom, userEmail, subj, msg); err != nil {
-			log.Printf("smtp: %v", err)
-		}
+		smtpHost := s.studio.SMTPHost
+		smtpPort := s.studio.SMTPPort
+		smtpUser := s.studio.SMTPUser
+		smtpPass := s.studio.SMTPPass
+		smtpFrom := s.studio.SMTPFrom
+		go func() {
+			if err := mail.BookingConfirmation(smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, userEmail, subj, msg); err != nil {
+				log.Printf("smtp: %v", err)
+			}
+		}()
 	}
 
 	w.Header().Set("Content-Type", "application/json")
